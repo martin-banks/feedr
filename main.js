@@ -38,31 +38,34 @@
 	};
 	var loaderTemplate = `<div id="pop-up" class="loader"></div>`;
 
-	renderLoading(state, container);
 
-
+	var feed;
 	var feeds = ['mashable', 'reddit'];
-	var feed = feeds[1];
+	
+	
 	var $navContainer = document.getElementById('navbar')
 
 	
+	function loadNewsContent(){
+		renderLoading(state, container);
+		fetch( state[feed].url() ).then( (data)=>{
+			console.log(data);
 
-	fetch( state[feed].url() ).then( (data)=>{
-		console.log(data);
+			return data.json();
 
-		return data.json();
+		}).then( (datajson)=>{
+			console.log('json file', state[feed].newStories(datajson) )
 
-	}).then( (datajson)=>{
-		console.log('json file', state[feed].newStories(datajson) )
+			var storyArr = state[feed].newStories(datajson)
+			console.log( storyArr );
+			var heady = state[feed].headline( state[feed].newStories(datajson)[0] );
 
-		var storyArr = state[feed].newStories(datajson)
-		console.log( storyArr );
-		var heady = state[feed].headline( state[feed].newStories(datajson)[0] );
+			console.log('headline: ', heady)
+			renderArticle( storyArr, container, feeds );
 
-		console.log('headline: ', heady)
-		renderArticle( storyArr, container, feeds );
-
-	});
+		});
+	}
+	
 
 
 
@@ -85,14 +88,13 @@
 				console.log(state[feed].headline(v))
 				return `<h2>${state[feed].headline(v)}</h2>`
 			}
-			
 		}).join('\n');
-
 		into.innerHTML =  headlines
 	}; // end render article
 
 
 	function renderNav(feeds) {
+		console.log('rendering nav');
 		var navTemplate = `
 		<section class="wrapper">
 			<a href="#"><h1>Feedr</h1></a>
@@ -103,7 +105,7 @@
 				</section>
 				<ul>
 					<li><a href="#">News Source: <span>Source Name</span></a>
-					<ul>
+					<ul id="newsSourcesList">
 						${renderSources(feeds)}
 					</ul>
 					</li>
@@ -112,8 +114,8 @@
 			<div class="clearfix"></div>
 		</section>
 		`
-
-
+		console.log('nav', navTemplate);
+		$navContainer.innerHTML = navTemplate
 		return navTemplate
 	}
 
@@ -121,11 +123,17 @@
 		console.log('loading nav');
 		var sources = data.map( (v,i,a)=>{
 			return `<li class="sourceId"><a href="#">${v}</a></li>`
-		}).join( );
-		$navContainer.innerHTML = sources
+		}).join('');
+		//$navContainer.innerHTML = sources
+		return sources
 	}
 
 	renderNav(feeds)
+	delegate('#newsSourcesList', 'click', 'li', ()=>{
+		feed = event.target.textContent;
+		loadNewsContent();
+	})
+
 
 
 })()
