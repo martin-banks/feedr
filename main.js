@@ -93,6 +93,7 @@
 
 
 	function renderArticle(data, into){ // headline only at this stage
+		var feed = state[state.feedInUse];
 		var headlines = data.map((v,i,a)=>{
 			if(i>=5){ // restrict to 5 titles only
 				return null
@@ -100,14 +101,14 @@
 				return `
 					<article class="article">
 						<section class="featured-image">
-							<img src="${state[state.feedInUse].thumbnail(v)}" alt="" />
+							<img src="${feed.thumbnail(v)}" alt="" />
 						</section>
 						<section class="article-content">
-							<a href="#"><h3>${state[state.feedInUse].headline(v)}</h3></a>
-							<h6>${state[state.feedInUse].labelText(v)}</h6>
+							<a href="#"><h3>${feed.headline(v)}</h3></a>
+							<h6>${feed.labelText(v)}</h6>
 						</section>
 						<section class="impressions">
-							${state[state.feedInUse].impressions(v)}
+							${feed.impressions(v)}
 						</section>
 						<div class="clearfix"></div>
 					</article>
