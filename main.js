@@ -25,6 +25,15 @@
 			headline: (data)=>{
 				return data['title']
 			},
+			thumbnail: (data)=>{
+				return data['responsive_images'][4]['image']
+			},
+			labelText: (data)=>{
+				return data['channel_label']
+			},
+			impressions: (data)=>{
+				return data['shares']['total']
+			}
 		},
 		reddit: {
 			url: ()=>{
@@ -37,6 +46,16 @@
 			headline: (data)=>{
 				return data['data']['title']
 			},
+			thumbnail: (data)=>{
+				return data['data']['thumbnail']
+			},
+			labelText: (data)=>{
+				return data['data']['subreddit']
+			},
+			impressions: (data)=>{
+				return data['data']['score']
+			}
+
 		},
 		
 	};
@@ -62,15 +81,41 @@
 	}; // end loadNewsContent
 	
 
+
+
+
+			
+
+
+
+
+
+
+
 	function renderArticle(data, into){ // headline only at this stage
 		var headlines = data.map((v,i,a)=>{
 			if(i>=5){ // restrict to 5 titles only
 				return null
 			} else {
-				return `<h2>${state[state.feedInUse].headline(v)}</h2>`
+				return `
+					<article class="article">
+						<section class="featured-image">
+							<img src="${state[state.feedInUse].thumbnail(v)}" alt="" />
+						</section>
+						<section class="article-content">
+							<a href="#"><h3>${state[state.feedInUse].headline(v)}</h3></a>
+							<h6>${state[state.feedInUse].labelText(v)}</h6>
+						</section>
+						<section class="impressions">
+							${state[state.feedInUse].impressions(v)}
+						</section>
+						<div class="clearfix"></div>
+					</article>
+				`
 			}
 		}).join('\n');
-		into.innerHTML =  headlines
+		var sourceName = `<h3>${state.feedInUse}</h3>`
+		into.innerHTML =  sourceName + headlines
 	}; // end render article
 
 
