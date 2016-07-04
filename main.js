@@ -7,9 +7,13 @@
 
 (function() {
 
-	var container = document.querySelector('#container')
+	var container = document.querySelector('#container');
+	var $navContainer = document.getElementById('navbar');
+
 	var state = {
 		cors: 'https://crossorigin.me/',
+		feedNames: ['mashable', 'reddit'],
+		feedInUse: null,
 		mashable: {
 			url: ()=>{
 				return state.cors+'http://mashable.com/stories.json'
@@ -36,65 +40,41 @@
 		},
 		
 	};
+
 	var loaderTemplate = `<div id="pop-up" class="loader"></div>`;
-
-
-	var feed;
-	var feeds = ['mashable', 'reddit'];
-	
-	
-	var $navContainer = document.getElementById('navbar')
-
-	
-	function loadNewsContent(){
-		renderLoading(state, container);
-		fetch( state[feed].url() ).then( (data)=>{
-			console.log(data);
-
-			return data.json();
-
-		}).then( (datajson)=>{
-			console.log('json file', state[feed].newStories(datajson) )
-
-			var storyArr = state[feed].newStories(datajson)
-			console.log( storyArr );
-			var heady = state[feed].headline( state[feed].newStories(datajson)[0] );
-
-			console.log('headline: ', heady)
-			renderArticle( storyArr, container, feeds );
-
-		});
-	}
-	
-
-
-
-
-	
-
 
 	function renderLoading(data, into) {
 		container.innerHTML = loaderTemplate;
-	};
+	}; // end renderLoading
 
+	function loadNewsContent( feed ){
+		renderLoading( state, container );
 
+		fetch( state[feed].url() ).then( ( data )=>{
+			console.log(data);
+			return data.json();
 
-	function renderArticle(data, into){
-		//state[feed][i]
+		}).then( (datajson)=>{
+			var storyArr = state[feed].newStories(datajson)
+			console.log( storyArr );
+			renderArticle( storyArr, container );
+		});
+	}; // end loadNewsContent
+	
+
+	function renderArticle(data, into){ // headline only at this stage
 		var headlines = data.map((v,i,a)=>{
-			if(i>=5){
+			if(i>=5){ // restrict to 5 titles only
 				return null
 			} else {
-				console.log(state[feed].headline(v))
-				return `<h2>${state[feed].headline(v)}</h2>`
+				return `<h2>${state[state.feedInUse].headline(v)}</h2>`
 			}
 		}).join('\n');
 		into.innerHTML =  headlines
 	}; // end render article
 
 
-	function renderNav(feeds) {
-		console.log('rendering nav');
+	function renderNav(param) {
 		var navTemplate = `
 		<section class="wrapper">
 			<a href="#"><h1>Feedr</h1></a>
@@ -106,7 +86,7 @@
 				<ul>
 					<li><a href="#">News Source: <span>Source Name</span></a>
 					<ul id="newsSourcesList">
-						${renderSources(feeds)}
+						${renderSources(param)}
 					</ul>
 					</li>
 				</ul>
@@ -114,24 +94,23 @@
 			<div class="clearfix"></div>
 		</section>
 		`
-		console.log('nav', navTemplate);
 		$navContainer.innerHTML = navTemplate
 		return navTemplate
-	}
+	}; // end renderNav
 
 	function renderSources(data){
-		console.log('loading nav');
 		var sources = data.map( (v,i,a)=>{
 			return `<li class="sourceId"><a href="#">${v}</a></li>`
 		}).join('');
-		//$navContainer.innerHTML = sources
 		return sources
-	}
+	}; // end render sources
 
-	renderNav(feeds)
+
+// doing stuff ////////////////////
+	renderNav(state.feedNames);
 	delegate('#newsSourcesList', 'click', 'li', ()=>{
-		feed = event.target.textContent;
-		loadNewsContent();
+		state.feedInUse = event.target.textContent;
+		loadNewsContent(state.feedInUse);
 	})
 
 
