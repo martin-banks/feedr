@@ -8,7 +8,6 @@
 
 (function() {
 
-	const nytapikey = '58d92dfcd1be4253bc49dde16e085af7';
 	
 	var containerTemplate = `
 		<header id="navbar"></header>
