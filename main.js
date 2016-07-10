@@ -243,24 +243,46 @@
 
 	function allchannels(){
 		var stateAll = {
-			bydate: []
-		}
+			bydate: [],
+			content: []
+		};
+		var allcontent;
 		state.feedNames.forEach( (v,i,a)=>{
 			stateAll[v] = {}
-
+			var allfeed = state[v]
 			fetch(state[v].url()).then( (response)=>{
 				return response.json()
 			}).then((data)=>{
 				stateAll[v] = data;
+
 				state[v].newStories(data).forEach((v,i,a)=>{
-					stateAll.bydate.push(v)
+					stateAll.bydate.push(v);
+					let x = ()=>{
+						return `
+							<article id='${i}' class="article" title='${i}'>
+								<section class="featured-image">
+									<img src="${allfeed.thumbnail(v)}" alt="" />
+								</section>
+								<section class="article-content">
+									<a href="#"><h3>${allfeed.headline(v)}</h3></a>
+									<h6>${allfeed.labelText(v)}</h6>
+								</section>
+								<section class="impressions">
+									${allfeed.impressions(v)}
+								</section>
+								<div class="clearfix"></div>
+							</article>
+						`
+					};
+					stateAll.content.push(x())
 				})
 				
 				console.log(stateAll.bydate)
 			}).then( (data)=>{
+				container.innerHTML = stateAll.content.join('')
 				console.log(stateAll);
 
-				
+
 
 			})
 		});
@@ -271,7 +293,7 @@
 		loop through all channels
 		push articles to obj/array
 	combine all articles
-		loop throughe ach entry in each channel
+		loop throughe each entry in each channel
 		push to master channel array
 		order by date
 	render each channel
