@@ -45,6 +45,9 @@
 			},
 			link: (data)=>{
 				return data['link']
+			},
+			synopsis: (data)=>{
+				return data['excerpt']
 			}
 		}, // end mashable
 		reddit: {
@@ -69,6 +72,9 @@
 			},
 			link: (data)=>{
 				return 'http://www.reddit.com'+data['data']['permalink']
+			},
+			synopsis: (data)=>{
+				return data['data']['selftext']
 			}
 		}// end reddit
 		
@@ -147,23 +153,32 @@
 
 		// show preview
 		delegate('#articleContainer', 'click', '.article', ()=>{
-			var articleIndex = parseInt(event.target.closest('article').title);
-
+			var index = data[parseInt(event.target.closest('article').title)];
+			console.log( index );
 			var previewTemplate = (param)=>{
 				return `
-					<img src="${param.thumbnail(data[articleIndex])}" alt="" />
-					<a href="${param.link(data[articleIndex])}" target="_blank"><h3>${param.headline(data[articleIndex])}</h3></a>
-					<h6>${param.labelText(data[articleIndex])}</h6>
-					<section class="impressions">
-						${param.impressions(data[articleIndex])}
-					</section>
+						<a href="#" class="close-pop-up">X</a>
+						<div class="wrapper">
+							<img src="${param.thumbnail(index)}" alt="" />
+							<h1>${param.headline(index)}</h1>
+							<h6>${param.labelText(index)}</h6>
+							<p>
+								${param.synopsis(index)}
+							</p>
+							<a href="${param.link(index)}" class="pop-up-action" target="_blank">Read more from source</a>
+						</div>
 				`
 			} ;
 			popupContainer.innerHTML = previewTemplate(feed);
 			popupContainer.className = ''
-			console.log( data[articleIndex] );
+			
+		}) // end render preview pop-up delegate
 
-		}) // end render preview pop-up
+		delegate('#pop-up', 'click', 'a.close-pop-up', ()=>{
+			console.log('close button clicked');
+			popupContainer.className = 'hidden';
+			popupContainer.innerHTML = ''
+		})
 	}; // end render article
 
 
