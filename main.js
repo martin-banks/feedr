@@ -7,8 +7,17 @@
 
 (function() {
 
-	var container = document.querySelector('#container');
-	var $navContainer = document.getElementById('navbar');
+	var containerTemplate = `
+		<header id="navbar"></header>
+		<div id="container"></div>
+		<div id="pop-up" class='hidden'></div>
+	`
+	document.getElementById('appContainer').innerHTML = containerTemplate
+
+	var container = document.querySelector('#appContainer #container');
+	var navContainer = document.querySelector('#appContainer #navbar');
+	var articleContainer = document.querySelector('#appContainer #articleContainer');
+	var popupContainer = document.querySelector('#appContainer #pop-up')
 
 	var state = {
 		cors: 'https://crossorigin.me/',
@@ -33,8 +42,11 @@
 			},
 			impressions: (data)=>{
 				return data['shares']['total']
+			},
+			link: (data)=>{
+				return data['link']
 			}
-		},
+		}, // end mashable
 		reddit: {
 			url: ()=>{
 				return state.cors+'https://www.reddit.com/top.json'
@@ -54,20 +66,41 @@
 			},
 			impressions: (data)=>{
 				return data['data']['score']
+			},
+			link: (data)=>{
+				return 'http://www.reddit.com'+data['data']['permalink']
 			}
-
-		},
+		}// end reddit
 		
 	};
 
-	var loaderTemplate = `<div id="pop-up" class="loader"></div>`;
+	const popupLoading = ()=>{
+		popupContainer.innerHTML = '';
+		popupContainer.className = 'loader';
+		//`<div id="pop-up" class="loader"></div>`;
+	} 
+	const popupOff = ()=>{
+		popupContainer.innerHTML = '';
+		popupContainer.className = 'hidden';
+		//`<div id="pop-up" class="loader"></div>`;
+	} 
 
-	function renderLoading(data, into) {
-		container.innerHTML = loaderTemplate;
-	}; // end renderLoading
+	var previewTemplate = (data)=>{
+		return `
+			<a href="#" class="close-pop-up">X</a>
+			<div class="wrapper">
+				<h1>Article title here</h1>
+				<p>
+					Article description/content here.
+				</p>
+				<a href="#" class="pop-up-action" target="_blank">Read more from source</a>
+			</div>
+		` // end preview template
+	}
 
 	function loadNewsContent( feed ){
-		renderLoading( state, container );
+		//renderLoading( state, container );
+		popupLoading();
 
 		fetch( state[feed].url() ).then( ( data )=>{
 			console.log(data);
@@ -77,6 +110,7 @@
 			var storyArr = state[feed].newStories(datajson)
 			console.log( storyArr );
 			renderArticle( storyArr, container );
+			popupOff();
 		});
 	}; // end loadNewsContent
 	
@@ -84,22 +118,16 @@
 
 
 
-			
-
-
-
-
-
-
 
 	function renderArticle(data, into){ // headline only at this stage
+		var previewCount = 5
 		var feed = state[state.feedInUse];
-		var headlines = data.map((v,i,a)=>{
-			if(i>=5){ // restrict to 5 titles only
-				return null
-			} else {
+		var previewList = data.filter( (v,i,a)=>{
+				return i<previewCount
+			})
+		var headlines = previewList.map((v,i,a)=>{
 				return `
-					<article class="article">
+					<article id='${i}' class="article" title='${i}'>
 						<section class="featured-image">
 							<img src="${feed.thumbnail(v)}" alt="" />
 						</section>
@@ -113,11 +141,32 @@
 						<div class="clearfix"></div>
 					</article>
 				`
-			}
-		}).join('\n');
-		var sourceName = `<h3>${state.feedInUse}</h3>`
-		into.innerHTML =  sourceName + headlines
+		}).join('');
+		var sourceName = `<h3>${state.feedInUse}</h3>`;
+		into.innerHTML =  `</div>${sourceName}<section id='articleContainer'>${headlines}</section>`;
+
+		// show preview
+		delegate('#articleContainer', 'click', '.article', ()=>{
+			var articleIndex = parseInt(event.target.closest('article').title);
+
+			var previewTemplate = (param)=>{
+				return `
+					<img src="${param.thumbnail(data[articleIndex])}" alt="" />
+					<a href="${param.link(data[articleIndex])}" target="_blank"><h3>${param.headline(data[articleIndex])}</h3></a>
+					<h6>${param.labelText(data[articleIndex])}</h6>
+					<section class="impressions">
+						${param.impressions(data[articleIndex])}
+					</section>
+				`
+			} ;
+			popupContainer.innerHTML = previewTemplate(feed);
+			popupContainer.className = ''
+			console.log( data[articleIndex] );
+
+		}) // end render preview pop-up
 	}; // end render article
+
+
 
 
 	function renderNav(param) {
@@ -140,7 +189,7 @@
 			<div class="clearfix"></div>
 		</section>
 		`
-		$navContainer.innerHTML = navTemplate
+		navContainer.innerHTML = navTemplate
 		return navTemplate
 	}; // end renderNav
 
@@ -152,12 +201,17 @@
 	}; // end render sources
 
 
+
+
 // doing stuff ////////////////////
 	renderNav(state.feedNames);
+
 	delegate('#newsSourcesList', 'click', 'li', ()=>{
 		state.feedInUse = event.target.textContent;
 		loadNewsContent(state.feedInUse);
-	})
+	});
+
+	
 
 
 

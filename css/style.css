@@ -84,6 +84,11 @@ body {
   background: #fff;
 }
 
+#pop-up .hidden {
+  margin-top: 100%;
+  display: none;
+}
+
 /* Header styles */
 header {
   background-color: #FE052C;
