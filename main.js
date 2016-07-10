@@ -6,9 +6,7 @@
  */
 
 
-(function() {
-
-	
+(function() {	
 	var containerTemplate = `
 		<header id="navbar"></header>
 		<div id="container"></div>
@@ -29,7 +27,7 @@
 			copyright: 'copyright',
 			brandname: 'NYT movie reviews',
 			url: ()=>{
-				return state.cors + 'https://api.nytimes.com/svc/movies/v2/reviews/search.json?api-key='+nytapikey
+				return state.cors + 'https://api.nytimes.com/svc/movies/v2/reviews/search.json?api-key='+nytkey
 			},
 			newStories: (data)=>{
 				return data['results']
@@ -191,7 +189,6 @@
 						<a href="${param.link(index)}" class="pop-up-action" target="_blank">Read more from source</a>
 						${ datajson['copyright'] ? `<h6>${datajson['copyright']}</h6>` : '' }
 					</div>
-
 				`
 			} ;
 			popupContainer.innerHTML = previewTemplate(feed);
@@ -208,10 +205,11 @@
 
 
 	function renderSources(data){
+		let allChannels = `<li class="sourceId" title='allChannels'><a href="#">All channels</a></li>`
 		var sources = data.map( (v,i,a)=>{
 			return `<li class="sourceId" title='${v}'><a href="#">${state[v].brandname}</a></li>`
 		}).join('');
-		return sources
+		return allChannels + sources
 	}; // end render sources
 
 
@@ -243,15 +241,76 @@
 
 
 
+	function allchannels(){
+		var stateAll = {
+			bydate: []
+		}
+		state.feedNames.forEach( (v,i,a)=>{
+			stateAll[v] = {}
+
+			fetch(state[v].url()).then( (response)=>{
+				return response.json()
+			}).then((data)=>{
+				stateAll[v] = data;
+				state[v].newStories(data).forEach((v,i,a)=>{
+					stateAll.bydate.push(v)
+				})
+				
+				console.log(stateAll.bydate)
+			}).then( (data)=>{
+				console.log(stateAll);
+
+				
+
+			})
+		});
+
+/*
+	fetch each channel
+		get length of channels
+		loop through all channels
+		push articles to obj/array
+	combine all articles
+		loop throughe ach entry in each channel
+		push to master channel array
+		order by date
+	render each channel
+		loop through master channel
+		apply to tempalte
+		render to DOM
+
+
+*/
+
+
+	}
+
+
+
 // doing stuff ////////////////////
 	renderNav(state.feedNames);
 
+
+
+
 	delegate('#newsSourcesList', 'click', 'li', ()=>{
-		state.feedInUse = event.target.closest('li').title;
-		loadNewsContent(state.feedInUse);
+		if (event.target.closest('li').title !== 'allChannels'){
+			state.feedInUse = event.target.closest('li').title;
+			loadNewsContent(state.feedInUse);
+		} else {
+			console.log('all channels');
+			allchannels()
+		}
+		
 	});
 
 	
+
+
+
+
+
+
 
 
 
