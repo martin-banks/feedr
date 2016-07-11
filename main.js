@@ -140,14 +140,29 @@
 		});
 	}; // end loadNewsContent
 	
+	
+	var popupTemplate = (brand, index, response)=>{
+		return `
+			<a href="#" class="close-pop-up">X</a>
+			<div class="wrapper">
+				<img src="${brand.thumbnail(index)}" alt="" />
+				<h1>${brand.headline(index)}</h1>
+				<h6>${brand.labelText(index)}</h6>
+				<p>
+					${brand.synopsis(index)}
+				</p>
+				<a href="${brand.link(index)}" class="pop-up-action" target="_blank">Read more from source</a>
+				${ response['copyright'] ? `<h6>${response['copyright']}</h6>` : '' }
+			</div>
+		`
+	};
 
 
-
-
+	
 
 	function renderArticle(data, into, datajson){ // headline only at this stage
 		console.log(datajson)
-		const previewCount = 10
+		const previewCount = 5;
 		var feed = state[state.feedInUse];
 		var previewList = data.filter( (v,i,a)=>{
 				return i<previewCount
@@ -172,35 +187,21 @@
 		var sourceName = `<h3>${state.feedInUse}</h3>${ datajson['copyright'] ? `<h6>${datajson['copyright']}</h6>` : '' }`;
 		into.innerHTML =  `${sourceName}<section id='articleContainer'>${headlines}</section>`;
 
+
+		
+
+
 		// show preview
 		delegate('#articleContainer', 'click', '.article', ()=>{
 			var index = data[parseInt(event.target.closest('article').title)];
 			console.log( index );
-			var previewTemplate = (param)=>{
-				return `
-					<a href="#" class="close-pop-up">X</a>
-					<div class="wrapper">
-						<img src="${param.thumbnail(index)}" alt="" />
-						<h1>${param.headline(index)}</h1>
-						<h6>${param.labelText(index)}</h6>
-						<p>
-							${param.synopsis(index)}
-						</p>
-						<a href="${param.link(index)}" class="pop-up-action" target="_blank">Read more from source</a>
-						${ datajson['copyright'] ? `<h6>${datajson['copyright']}</h6>` : '' }
-					</div>
-				`
-			} ;
-			popupContainer.innerHTML = previewTemplate(feed);
+			
+			popupContainer.innerHTML = popupTemplate(feed, index, datajson);
 			popupContainer.className = ''
 			
 		}) // end render preview pop-up delegate
 
-		delegate('#pop-up', 'click', 'a.close-pop-up', ()=>{
-			console.log('close button clicked');
-			popupContainer.className = 'hidden';
-			popupContainer.innerHTML = ''
-		})
+		
 	}; // end render article
 
 
@@ -255,26 +256,27 @@
 			}).then((data)=>{
 				stateAll[v] = data;
 
-				state[v].newStories(data).forEach((v,i,a)=>{
+				state[v].newStories(data).forEach((val,ind,arr)=>{
 					stateAll.bydate.push(v);
 					let x = ()=>{
 						return `
-							<article id='${i}' class="article" title='${i}'>
+							<article id='${ind}' class="article" title='${v}'>
 								<section class="featured-image">
-									<img src="${allfeed.thumbnail(v)}" alt="" />
+									<img src="${allfeed.thumbnail(val)}" alt="" />
 								</section>
 								<section class="article-content">
-									<a href="#"><h3>${allfeed.headline(v)}</h3></a>
-									<h6>${allfeed.labelText(v)}</h6>
+									<a href="#"><h3>${allfeed.headline(val)}</h3></a>
+									<h6>${allfeed.labelText(val)}</h6>
 								</section>
 								<section class="impressions">
-									${allfeed.impressions(v)}
+									${allfeed.impressions(val)}
 								</section>
 								<div class="clearfix"></div>
 							</article>
 						`
 					};
 					stateAll.content.push(x())
+
 				})
 				
 				console.log(stateAll.bydate)
@@ -282,10 +284,23 @@
 				container.innerHTML = stateAll.content.join('')
 				console.log(stateAll);
 
-
-
+			}).then( (data)=>{
+				
 			})
 		});
+
+		delegate('#container', 'click', 'section', ()=>{
+			var getbrand = event.target.closest('article').title;
+			var getind = parseInt(event.target.closest('article').id);
+			
+			let thisBrand = state[getbrand]
+			let thisStory = state[getbrand].newStories( stateAll[getbrand] )[getind]
+
+			// render popup
+			popupContainer.innerHTML = popupTemplate( thisBrand, thisStory, thisBrand );
+			popupContainer.className = ''
+				
+		})
 
 /*
 	fetch each channel
@@ -325,6 +340,14 @@
 		}
 		
 	});
+
+
+	// close button
+	delegate('#pop-up', 'click', 'a.close-pop-up', ()=>{
+		console.log('close button clicked');
+		popupContainer.className = 'hidden';
+		popupContainer.innerHTML = ''
+	})
 
 	
 
