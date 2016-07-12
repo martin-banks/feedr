@@ -49,6 +49,9 @@
 			},
 			synopsis: (data)=>{
 				return data['summary_short']
+			},
+			date: (data)=>{
+				return data['publication_date']
 			}
 		},
 		mashable: {
@@ -77,6 +80,9 @@
 			},
 			synopsis: (data)=>{
 				return data['excerpt']
+			},
+			date: (data)=>{
+				return data['post_date']
 			}
 		}, // end mashable
 		reddit: {
@@ -105,6 +111,9 @@
 			},
 			synopsis: (data)=>{
 				return data['data']['selftext']
+			},
+			date: (data)=>{
+				return data['data']['created']
 			}
 		}// end reddit
 		
@@ -193,6 +202,7 @@
 
 		// show preview
 		delegate('#articleContainer', 'click', '.article', ()=>{
+			prevent.default()
 			var index = data[parseInt(event.target.closest('article').title)];
 			console.log( index );
 			
@@ -239,6 +249,29 @@
 	}; // end renderNav
 
 	
+	function timeConverter(timeJSON){
+		if(new Date(timeJSON) === 'invalid'){
+			var a = new Date(timeJSON * 1000);
+			var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+			var year = a.getFullYear();
+			var month = months[a.getMonth()];
+			var date = a.getDate();
+			var hour = a.getHours();
+			var min = a.getMinutes();
+			var sec = a.getSeconds();
+			var time = month + ' ' + date + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+			return time;
+		} else {
+			return timeJSON
+		}
+	}
+	// UNIX time passed as integer
+	//new Date(timeConverter(1468188020));
+
+	// std time passed as string
+	//new Date(timeConverter("2016-07-11T11:07:47+00:00"));
+
+
 
 
 
@@ -260,7 +293,7 @@
 					stateAll.bydate.push(v);
 					let x = ()=>{
 						return `
-							<article id='${ind}' class="article" title='${v}'>
+							<article id='${ind}' class="article" title='${v}' data-date='${new Date(timeConverter(allfeed.date(val)))}'>
 								<section class="featured-image">
 									<img src="${allfeed.thumbnail(val)}" alt="" />
 								</section>
@@ -289,12 +322,16 @@
 			})
 		});
 
-		delegate('#container', 'click', 'section', ()=>{
-			var getbrand = event.target.closest('article').title;
-			var getind = parseInt(event.target.closest('article').id);
+		delegate('#container', 'click', 'section', (event)=>{
+			event.preventDefault();
+			let getBrand = event.target.closest('article').title;
+			let getInd = parseInt(event.target.closest('article').id);
+
+			console.log(event.target.closest('article').getAttribute('data-date'))
 			
-			let thisBrand = state[getbrand]
-			let thisStory = state[getbrand].newStories( stateAll[getbrand] )[getind]
+			let thisBrand = state[getBrand];
+			let thisjson = stateAll[getBrand]
+			let thisStory = thisBrand.newStories( thisjson )[getInd];
 
 			// render popup
 			popupContainer.innerHTML = popupTemplate( thisBrand, thisStory, thisBrand );
@@ -302,22 +339,6 @@
 				
 		})
 
-/*
-	fetch each channel
-		get length of channels
-		loop through all channels
-		push articles to obj/array
-	combine all articles
-		loop throughe each entry in each channel
-		push to master channel array
-		order by date
-	render each channel
-		loop through master channel
-		apply to tempalte
-		render to DOM
-
-
-*/
 
 
 	}
@@ -330,7 +351,7 @@
 
 
 
-	delegate('#newsSourcesList', 'click', 'li', ()=>{
+	delegate('#newsSourcesList', 'click', 'li', (event)=>{
 		if (event.target.closest('li').title !== 'allChannels'){
 			state.feedInUse = event.target.closest('li').title;
 			loadNewsContent(state.feedInUse);
@@ -344,19 +365,58 @@
 
 	// close button
 	delegate('#pop-up', 'click', 'a.close-pop-up', ()=>{
+		event.preventDefault();
 		console.log('close button clicked');
 		popupContainer.className = 'hidden';
 		popupContainer.innerHTML = ''
+	});
+	delegate('.wrapper a', 'click', 'h1', ()=>{
+		allchannels()
 	})
 
+	// load all channels on load
+	allchannels()
 	
 
-
-
-
-
-
-
-
-
 })()
+
+
+
+
+
+/*
+//convert dates
+
+function timeConverter(timeJSON){
+	if(new Date(timeJSON) === 'invalid'){
+		var a = new Date(timeJSON * 1000);
+		var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+		var year = a.getFullYear();
+		var month = months[a.getMonth()];
+		var date = a.getDate();
+		var hour = a.getHours();
+		var min = a.getMinutes();
+		var sec = a.getSeconds();
+		var time = month + ' ' + date + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+		return time;
+	} else {
+		return timeJSON
+	}
+}
+// UNIX time passed as integer
+new Date(timeConverter(1468188020));
+
+// std time passed as string
+new Date(timeConverter("2016-07-11T11:07:47+00:00"));
+
+
+
+//////// not needed //////////
+// if standard
+new Date("2016-07-11T11:07:47+00:00");
+// conditional to detect unix???
+// if UNIX
+new Date(timeConverter(1468188020));
+////////////////////////////////
+
+*/
