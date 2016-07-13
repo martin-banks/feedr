@@ -3,7 +3,13 @@
  * ====
  *
  * See the README.md for instructions
+
+ IMPORTANT
+ NYT api keys applied for here:
+ http://developer.nytimes.com/signup
+ approval usually within 15mins
  */
+
 
 
 (function() {	
@@ -252,7 +258,6 @@
 			bydate: [],
 			content: []
 		};
-		//var allcontent;
 		state.feedNames.forEach( (v,i,a)=>{
 			stateAll[v] = {}
 			var allfeed = state[v]
@@ -264,22 +269,16 @@
 					if (ind<previewCount){ // limit story count per channel
 						val.brand = v;
 						if (typeof allfeed.date(val) === "number" ){ // if unix format multiply
-							// fail safe to upgrade reddit only; needs more elegant solution
-							console.log( allfeed.date(val).toString().length )
 							if ( (allfeed.date(val).toString().length) < 13 ) { 
-								console.log('under length')
 								var diff = 13 - allfeed.date(val).toString().length;
 								var newDate = allfeed.date(val)
 								for (var i=0; i<diff; i++){
-									console.log(newDate)
 									newDate *= 10
 								}	
 								val.dateStamp = newDate
-							} else {
+							} else { // date is correct length
 								val.dateStamp = allfeed.date(val)
-							}
-
-							
+							} // end date length check
 						} else {
 							val.dateStamp = new Date(timeConverter(allfeed.date(val) ) ).getTime() // use getTime to convert to unix format 
 						}
@@ -323,21 +322,25 @@
 		}, 2000);
 
 		delegate('#container', 'click', 'section', (event)=>{
-		event.preventDefault();
-		let getBrand = event.target.closest('article').title;
-		let getInd = parseInt(event.target.closest('article').id);
-		let thisBrand = state[getBrand];
-		let thisjson = stateAll[getBrand]
-		let thisStory = thisBrand.newStories( thisjson )[getInd];
-
-		// render popup
-		popupContainer.innerHTML = popupTemplate( thisBrand, thisStory, thisBrand );
-		popupContainer.className = ''	
-	})
+			event.preventDefault();
+			var getBrand = event.target.closest('article').title;
+			var thisHeadline = event.target.closest('article').querySelector('h3').textContent;
+			var getInd = parseInt(event.target.closest('article').id);
+			var thisBrand = state[getBrand];
+			var thisjson = stateAll[getBrand];
+			var thisStory;
+			var findStoryObj = thisBrand.newStories(thisjson).filter((v,i,a)=>{
+				if ( thisBrand.headline(v) === thisHeadline){
+					thisStory = v
+				}
+			})
+			
+			// render popup
+			popupContainer.innerHTML = popupTemplate( thisBrand, thisStory, thisjson );
+			popupContainer.className = ''	
+		})
 		
 	};
-
-
 
 	renderNav(state.feedNames);
 	delegate('#newsSourcesList', 'click', 'li', (event)=>{
