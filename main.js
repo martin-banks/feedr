@@ -124,33 +124,22 @@
 	const popupLoading = ()=>{
 		popupContainer.innerHTML = '';
 		popupContainer.className = 'loader';
-		//`<div id="pop-up" class="loader"></div>`;
 	} 
 	const popupOff = ()=>{
 		popupContainer.innerHTML = '';
 		popupContainer.className = 'hidden';
-		//`<div id="pop-up" class="loader"></div>`;
 	} 
 
-
-
 	function loadNewsContent( feed ){
-		//renderLoading( state, container );
 		popupLoading();
-
 		fetch( state[feed].url() ).then( ( data )=>{
-			//console.log(data);
 			return data.json();
-
 		}).then( (datajson)=>{
-			//console.log(datajson)
 			var storyArr = state[feed].newStories(datajson)
-			//console.log( storyArr );
 			renderArticle( storyArr, container, datajson );
 			popupOff();
 		});
 	}; // end loadNewsContent
-	
 	
 	var popupTemplate = (brand, index, response)=>{
 		return `
@@ -165,20 +154,19 @@
 				<a href="${brand.link(index)}" class="pop-up-action" target="_blank">Read more from source</a>
 				${ response['copyright'] ? `<h6>${response['copyright']}</h6>` : '' }
 			</div>
-		`
+		` // end template
 	};
 
 
 	
 
-	function renderArticle(data, into, datajson){ // headline only at this stage
-		//console.log(datajson)
+	function renderArticle(data, into, datajson){
 		var feed = state[state.feedInUse];
 		var previewList = data.filter( (v,i,a)=>{
 				return i<previewCount
 			})
 		var headlines = previewList.map((v,i,a)=>{
-			console.log(v)
+			//console.log(v)
 				return `
 					<article id='${i}' class="article" title='${i}'>
 						<section class="featured-image">
@@ -193,28 +181,19 @@
 						</section>
 						<div class="clearfix"></div>
 					</article>
-				`
+				` // end template
 		}).join('');
 		var sourceName = `<h3>${state.feedInUse}</h3>${ datajson['copyright'] ? `<h6>${datajson['copyright']}</h6>` : '' }`;
 		into.innerHTML =  `${sourceName}<section id='articleContainer'>${headlines}</section>`;
 
-
-		
-
-
 		// show preview
 		delegate('#articleContainer', 'click', '.article', ()=>{
 			var index = data[parseInt(event.target.closest('article').title)];
-			//console.log( index );
-			
 			popupContainer.innerHTML = popupTemplate(feed, index, datajson);
 			popupContainer.className = ''
-			
-		}) // end render preview pop-up delegate
+		}) // end render preview pop-up delegate	
 
-		
 	}; // end render article
-
 
 	function renderSources(data){
 		let allChannels = `<li class="sourceId" title='allChannels'><a href="#">All channels</a></li>`
@@ -223,7 +202,6 @@
 		}).join('');
 		return allChannels + sources
 	}; // end render sources
-
 
 	function renderNav(param) {
 		var navTemplate = `
@@ -244,12 +222,11 @@
 			</nav>
 			<div class="clearfix"></div>
 		</section>
-		`
+		` // end template
 		navContainer.innerHTML = navTemplate
 		return navTemplate
 	}; // end renderNav
 
-	
 	// convert date format
 	function timeConverter(timeJSON){
 		if(new Date(timeJSON) === 'invalid'){
@@ -266,11 +243,11 @@
 		} else {
 			return timeJSON
 		}
-	}
-
+	};
 
 
 	function allchannels(){
+		popupContainer.className = 'loader';
 		var stateAll = {
 			bydate: [],
 			content: []
@@ -284,65 +261,71 @@
 			}).then((data)=>{
 				stateAll[v] = data;
 				state[v].newStories(data).forEach((val,ind,arr)=>{
-					if (ind<previewCount){ // limit to 5 per channel
+					if (ind<previewCount){ // limit story count per channel
 						val.brand = v;
 						if (typeof allfeed.date(val) === "number" ){ // if unix format multiply
 							// fail safe to upgrade reddit only; needs more elegant solution
-							val.dateStamp = allfeed.date(val) * 1000
+							console.log( allfeed.date(val).toString().length )
+							if ( (allfeed.date(val).toString().length) < 13 ) { 
+								console.log('under length')
+								var diff = 13 - allfeed.date(val).toString().length;
+								var newDate = allfeed.date(val)
+								for (var i=0; i<diff; i++){
+									console.log(newDate)
+									newDate *= 10
+								}	
+								val.dateStamp = newDate
+							} else {
+								val.dateStamp = allfeed.date(val)
+							}
+
+							
 						} else {
 							val.dateStamp = new Date(timeConverter(allfeed.date(val) ) ).getTime() // use getTime to convert to unix format 
 						}
 						stateAll.bydate.push(val);
-						console.log('state all', stateAll.bydate);	
+						//console.log('state all', stateAll.bydate);	
 						if ( stateAll.bydate.length === (previewCount*(state.feedNames.length)) ){
 							var orderedArray = stateAll.bydate.sort(function(a, b) {
-							return a.dateStamp - b.dateStamp;
+							return b.dateStamp - a.dateStamp;
 						});
-						//return orderedArray
-						//console.log('ordered array:', ordered);
-						//console.log(allfeed);
-						console.log('pre-template:', orderedArray);
+						
+						//console.log('pre-template:', orderedArray);
 						var orderTemplate = orderedArray.map( (ov,oi,oa)=>{
-							//if (oi % 2 === 0){ // only display even numbers (for brevity in testing)
-								console.log(ov)
-								//console.log(orderedArray.brand)
-								return `
-									<article id='${oi}' class="article" title='${ov.brand}' data-date='${ov.dateStamp}'>
-										<section class="featured-image">
-											<img src="${state[ov.brand].thumbnail(ov)}" alt="" />
-										</section>
-										<section class="article-content">
-											<a href="#"><h3>${state[ov.brand].headline(ov)}</h3></a>
-											<h6>${state[ov.brand].labelText(ov)}</h6>
-										</section>
-										<section class="impressions">
-											${state[ov.brand].impressions(ov)}
-										</section>
-										<div class="clearfix"></div>
-									</article>
-								`
-							//}
+							//console.log(ov)
+							return `
+								<article id='${oi}' class="article" title='${ov.brand}' data-date='${ov.dateStamp}'>
+									<section class="featured-image">
+										<img src="${state[ov.brand].thumbnail(ov)}" alt="" />
+									</section>
+									<section class="article-content">
+										<a href="#"><h3>${state[ov.brand].headline(ov)}</h3></a>
+										<h6>${state[ov.brand].labelText(ov)}</h6>
+									</section>
+									<section class="impressions">
+										${state[ov.brand].impressions(ov)}
+									</section>
+									<div class="clearfix"></div>
+								</article>
+							`// end template
 						});	
-						console.log('final order', orderTemplate)
+						//console.log('final order', orderTemplate)
 						container.innerHTML = orderTemplate.join('');
+						popupContainer.className = 'hidden';
 						}
 					}
 				});
-//				console.log('state all', stateAll.bydate);	
 			})
 		});
 
 		setTimeout(function() {
-			console.log('timeout!')
+			//console.log('timeout!')
 		}, 2000);
 
 		delegate('#container', 'click', 'section', (event)=>{
 		event.preventDefault();
 		let getBrand = event.target.closest('article').title;
 		let getInd = parseInt(event.target.closest('article').id);
-
-		//console.log(event.target.closest('article').getAttribute('data-date'))
-		
 		let thisBrand = state[getBrand];
 		let thisjson = stateAll[getBrand]
 		let thisStory = thisBrand.newStories( thisjson )[getInd];
@@ -352,33 +335,23 @@
 		popupContainer.className = ''	
 	})
 		
-		
-
 	};
 
-// doing stuff ////////////////////
+
+
 	renderNav(state.feedNames);
-
-
-	
-
-
 	delegate('#newsSourcesList', 'click', 'li', (event)=>{
 		if (event.target.closest('li').title !== 'allChannels'){
 			state.feedInUse = event.target.closest('li').title;
 			loadNewsContent(state.feedInUse);
 		} else {
-			//console.log('all channels');
 			allchannels()
 		}
-		
 	});
-
 
 	// close button
 	delegate('#pop-up', 'click', 'a.close-pop-up', ()=>{
 		event.preventDefault();
-		//console.log('close button clicked');
 		popupContainer.className = 'hidden';
 		popupContainer.innerHTML = ''
 	});
@@ -388,47 +361,9 @@
 
 	// load all channels on load
 	allchannels()
+	popupContainer.className = 'loader';
 	
 
-})()
+})() // end iife
 
 
-
-
-
-/*
-//convert dates
-
-function timeConverter(timeJSON){
-	if(new Date(timeJSON) === 'invalid'){
-		var a = new Date(timeJSON * 1000);
-		var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-		var year = a.getFullYear();
-		var month = months[a.getMonth()];
-		var date = a.getDate();
-		var hour = a.getHours();
-		var min = a.getMinutes();
-		var sec = a.getSeconds();
-		var time = month + ' ' + date + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
-		return time;
-	} else {
-		return timeJSON
-	}
-}
-// UNIX time passed as integer
-new Date(timeConverter(1468188020));
-
-// std time passed as string
-new Date(timeConverter("2016-07-11T11:07:47+00:00"));
-
-
-
-//////// not needed //////////
-// if standard
-new Date("2016-07-11T11:07:47+00:00");
-// conditional to detect unix???
-// if UNIX
-new Date(timeConverter(1468188020));
-////////////////////////////////
-
-*/
