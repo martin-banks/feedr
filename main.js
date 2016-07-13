@@ -19,6 +19,8 @@
 	var articleContainer = document.querySelector('#appContainer #articleContainer');
 	var popupContainer = document.querySelector('#appContainer #pop-up')
 
+	const previewCount = 10;
+
 	var state = {
 		cors: 'https://crossorigin.me/',
 		feedNames: ['mashable', 'reddit', 'nytMovies'],
@@ -137,13 +139,13 @@
 		popupLoading();
 
 		fetch( state[feed].url() ).then( ( data )=>{
-			console.log(data);
+			//console.log(data);
 			return data.json();
 
 		}).then( (datajson)=>{
-			console.log(datajson)
+			//console.log(datajson)
 			var storyArr = state[feed].newStories(datajson)
-			console.log( storyArr );
+			//console.log( storyArr );
 			renderArticle( storyArr, container, datajson );
 			popupOff();
 		});
@@ -170,13 +172,13 @@
 	
 
 	function renderArticle(data, into, datajson){ // headline only at this stage
-		console.log(datajson)
-		const previewCount = 5;
+		//console.log(datajson)
 		var feed = state[state.feedInUse];
 		var previewList = data.filter( (v,i,a)=>{
 				return i<previewCount
 			})
 		var headlines = previewList.map((v,i,a)=>{
+			console.log(v)
 				return `
 					<article id='${i}' class="article" title='${i}'>
 						<section class="featured-image">
@@ -202,9 +204,8 @@
 
 		// show preview
 		delegate('#articleContainer', 'click', '.article', ()=>{
-			prevent.default()
 			var index = data[parseInt(event.target.closest('article').title)];
-			console.log( index );
+			//console.log( index );
 			
 			popupContainer.innerHTML = popupTemplate(feed, index, datajson);
 			popupContainer.className = ''
@@ -249,6 +250,7 @@
 	}; // end renderNav
 
 	
+	// convert date format
 	function timeConverter(timeJSON){
 		if(new Date(timeJSON) === 'invalid'){
 			var a = new Date(timeJSON * 1000);
@@ -265,13 +267,6 @@
 			return timeJSON
 		}
 	}
-	// UNIX time passed as integer
-	//new Date(timeConverter(1468188020));
-
-	// std time passed as string
-	//new Date(timeConverter("2016-07-11T11:07:47+00:00"));
-
-
 
 
 
@@ -280,75 +275,92 @@
 			bydate: [],
 			content: []
 		};
-		var allcontent;
+		//var allcontent;
 		state.feedNames.forEach( (v,i,a)=>{
 			stateAll[v] = {}
 			var allfeed = state[v]
 			fetch(state[v].url()).then( (response)=>{
-				return response.json()
+				return response.json();
 			}).then((data)=>{
 				stateAll[v] = data;
-
 				state[v].newStories(data).forEach((val,ind,arr)=>{
-					stateAll.bydate.push(v);
-					let x = ()=>{
-						return `
-							<article id='${ind}' class="article" title='${v}' data-date='${new Date(timeConverter(allfeed.date(val)))}'>
-								<section class="featured-image">
-									<img src="${allfeed.thumbnail(val)}" alt="" />
-								</section>
-								<section class="article-content">
-									<a href="#"><h3>${allfeed.headline(val)}</h3></a>
-									<h6>${allfeed.labelText(val)}</h6>
-								</section>
-								<section class="impressions">
-									${allfeed.impressions(val)}
-								</section>
-								<div class="clearfix"></div>
-							</article>
-						`
-					};
-					stateAll.content.push(x())
-
-				})
-				
-				console.log(stateAll.bydate)
-			}).then( (data)=>{
-				container.innerHTML = stateAll.content.join('')
-				console.log(stateAll);
-
-			}).then( (data)=>{
-				
+					if (ind<previewCount){ // limit to 5 per channel
+						val.brand = v;
+						if (typeof allfeed.date(val) === "number" ){ // if unix format multiply
+							// fail safe to upgrade reddit only; needs more elegant solution
+							val.dateStamp = allfeed.date(val) * 1000
+						} else {
+							val.dateStamp = new Date(timeConverter(allfeed.date(val) ) ).getTime() // use getTime to convert to unix format 
+						}
+						stateAll.bydate.push(val);
+						console.log('state all', stateAll.bydate);	
+						if ( stateAll.bydate.length === (previewCount*(state.feedNames.length)) ){
+							var orderedArray = stateAll.bydate.sort(function(a, b) {
+							return a.dateStamp - b.dateStamp;
+						});
+						//return orderedArray
+						//console.log('ordered array:', ordered);
+						//console.log(allfeed);
+						console.log('pre-template:', orderedArray);
+						var orderTemplate = orderedArray.map( (ov,oi,oa)=>{
+							//if (oi % 2 === 0){ // only display even numbers (for brevity in testing)
+								console.log(ov)
+								//console.log(orderedArray.brand)
+								return `
+									<article id='${oi}' class="article" title='${ov.brand}' data-date='${ov.dateStamp}'>
+										<section class="featured-image">
+											<img src="${state[ov.brand].thumbnail(ov)}" alt="" />
+										</section>
+										<section class="article-content">
+											<a href="#"><h3>${state[ov.brand].headline(ov)}</h3></a>
+											<h6>${state[ov.brand].labelText(ov)}</h6>
+										</section>
+										<section class="impressions">
+											${state[ov.brand].impressions(ov)}
+										</section>
+										<div class="clearfix"></div>
+									</article>
+								`
+							//}
+						});	
+						console.log('final order', orderTemplate)
+						container.innerHTML = orderTemplate.join('');
+						}
+					}
+				});
+//				console.log('state all', stateAll.bydate);	
 			})
 		});
 
+		setTimeout(function() {
+			console.log('timeout!')
+		}, 2000);
+
 		delegate('#container', 'click', 'section', (event)=>{
-			event.preventDefault();
-			let getBrand = event.target.closest('article').title;
-			let getInd = parseInt(event.target.closest('article').id);
+		event.preventDefault();
+		let getBrand = event.target.closest('article').title;
+		let getInd = parseInt(event.target.closest('article').id);
 
-			console.log(event.target.closest('article').getAttribute('data-date'))
-			
-			let thisBrand = state[getBrand];
-			let thisjson = stateAll[getBrand]
-			let thisStory = thisBrand.newStories( thisjson )[getInd];
+		//console.log(event.target.closest('article').getAttribute('data-date'))
+		
+		let thisBrand = state[getBrand];
+		let thisjson = stateAll[getBrand]
+		let thisStory = thisBrand.newStories( thisjson )[getInd];
 
-			// render popup
-			popupContainer.innerHTML = popupTemplate( thisBrand, thisStory, thisBrand );
-			popupContainer.className = ''
-				
-		})
+		// render popup
+		popupContainer.innerHTML = popupTemplate( thisBrand, thisStory, thisBrand );
+		popupContainer.className = ''	
+	})
+		
+		
 
-
-
-	}
-
-
+	};
 
 // doing stuff ////////////////////
 	renderNav(state.feedNames);
 
 
+	
 
 
 	delegate('#newsSourcesList', 'click', 'li', (event)=>{
@@ -356,7 +368,7 @@
 			state.feedInUse = event.target.closest('li').title;
 			loadNewsContent(state.feedInUse);
 		} else {
-			console.log('all channels');
+			//console.log('all channels');
 			allchannels()
 		}
 		
@@ -366,7 +378,7 @@
 	// close button
 	delegate('#pop-up', 'click', 'a.close-pop-up', ()=>{
 		event.preventDefault();
-		console.log('close button clicked');
+		//console.log('close button clicked');
 		popupContainer.className = 'hidden';
 		popupContainer.innerHTML = ''
 	});
