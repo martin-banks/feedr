@@ -24,7 +24,6 @@
 	var navContainer = document.querySelector('#appContainer #navbar');
 	var articleContainer = document.querySelector('#appContainer #articleContainer');
 	var popupContainer = document.querySelector('#appContainer #pop-up')
-
 	const previewCount = 10;
 
 	var state = {
@@ -123,8 +122,7 @@
 			date: (data)=>{
 				return data['data']['created']
 			}
-		}// end reddit
-		
+		}// end reddit	
 	};
 
 	const popupLoading = ()=>{
@@ -162,9 +160,6 @@
 			</div>
 		` // end template
 	};
-
-
-	
 
 	function renderArticle(data, into, datajson){
 		var feed = state[state.feedInUse];
@@ -214,10 +209,10 @@
 		<section class="wrapper">
 			<a href="#"><h1>Feedr</h1></a>
 			<nav>
-				<section id="search">
+				<!--<section id="search">
 					<input type="text" name="name" value="">
 					<div id="search-icon"><img src="images/search.png" alt="" /></div>
-				</section>
+				</section>-->
 				<ul>
 					<li><a href="#">News Source: <span>Source Name</span></a>
 					<ul id="newsSourcesList">
@@ -250,7 +245,6 @@
 			return timeJSON
 		}
 	};
-
 
 	function allchannels(){
 		popupContainer.className = 'loader';
@@ -334,7 +328,6 @@
 					thisStory = v
 				}
 			})
-			
 			// render popup
 			popupContainer.innerHTML = popupTemplate( thisBrand, thisStory, thisjson );
 			popupContainer.className = ''	
