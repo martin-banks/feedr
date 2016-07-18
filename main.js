@@ -64,7 +64,7 @@
 		mashable: {
 			brandname: 'Mashable',
 			url: ()=>{
-				return state.cors+'http://mashable.com/stories.json'
+				return state.cors+'https://mashable.com/stories.json'
 			},
 			newStories: (data)=>{
 				return data['hot']
@@ -114,7 +114,7 @@
 				return data['data']['score']
 			},
 			link: (data)=>{
-				return 'http://www.reddit.com'+data['data']['permalink']
+				return 'https://www.reddit.com'+data['data']['permalink']
 			},
 			synopsis: (data)=>{
 				return data['data']['selftext']
