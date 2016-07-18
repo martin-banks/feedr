@@ -28,7 +28,7 @@
 
 	var state = {
 		cors: 'https://crossorigin.me/',
-		feedNames: ['mashable', 'reddit', 'nytMovies'],
+		feedNames: ['mashable', 'reddit'/*, 'nytMovies'*/],
 		feedInUse: null,
 		nytMovies: {
 			copyright: 'copyright',
